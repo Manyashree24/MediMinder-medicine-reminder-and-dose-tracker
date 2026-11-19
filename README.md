@@ -119,8 +119,8 @@ npm test          # or: node --test
 This is an educational project. It does not replace medical advice. The interaction list covers common examples only. Always follow your doctor's prescription and ask a pharmacist about interactions.
 
 ## 👤 Author
-**&lt;Your Name&gt;**, B.Tech CSE (AI & ML), Dayananda Sagar University, Bengaluru
-GitHub: [@&lt;your-username&gt;](https://github.com/<your-username>)
+**&lt;Manyashree&gt;**, B.Tech CSE (AI & ML), Dayananda Sagar University, Bengaluru
+GitHub: [@&lt;Manyashree24&gt;](https://github.com/Manyashree24)
 
 ## 📄 License
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE].
