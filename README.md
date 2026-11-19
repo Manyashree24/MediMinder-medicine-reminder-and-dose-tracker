@@ -1,83 +1,126 @@
-# 💊 MediMinder – Medicine Reminder & Dose Tracker
+# 💊 MediMinder Pro – Smart Medication Adherence Tracker
 
-MediMinder is a simple web app for planning daily medicines. You tick off each dose as you take it, and the app shows how well you are keeping to your schedule.
+> A complete web app for medication management. It plans dose schedules, tracks every dose, warns about refills and drug interactions, and uses a **machine-learning model trained in the browser** to predict which doses you are likely to miss.
 
-🔗 **Live Demo:** https://<your-username>.github.io/mediminder/
+🔗 **Live demo:** https://&lt;your-username&gt;.github.io/mediminder/
+&nbsp;·&nbsp; Click **✨ Demo data** on first load to explore with 60 days of sample history.
+
+![Dashboard](docs/screenshots/dashboard.png)
 
 ---
 
-## 📌 Problem Statement
-Many patients, especially elderly people and those with long-term conditions, forget or skip doses. Missed doses make treatment work less well. MediMinder gives a clear daily schedule, reminds you when a dose is due, and tracks how often you follow the plan.
+## 📌 Problem statement
+Up to half of patients with long-term conditions such as diabetes and hypertension do not take their medicines as prescribed (WHO). Missed doses lead to poor disease control and avoidable hospital visits. Most reminder apps only send alarms. They do not learn *when* and *why* a patient misses doses.
+
+**MediMinder Pro** combines scheduling and tracking with analytics and an ML model that spots each patient's personal risk patterns, such as night doses or weekends, and gives targeted advice.
 
 ## ✨ Features
-- **Add medicines** with name, dose, meal timing (before or after food) and several times per day
-- **Today's schedule** sorted by time, with a **Taken ✓** button for each dose
-- **Missed doses shown in red** once their time has passed
-- **Reminder pop-up** when a dose time arrives (while the page is open)
-- **Stats dashboard**
-  - Doses taken today (e.g. 2/3)
-  - 7-day adherence percentage with a progress bar
-  - Streak of days with every dose taken
-- **Data stays in your browser** (localStorage): no login, no server, private by default
-- **Responsive design** for mobile and desktop
+| Module | What it does |
+|---|---|
+| **Dashboard** | Today's timeline with Take / Snooze / Skip, a next-dose countdown, KPIs (today's progress, 7-day adherence with week-over-week change, perfect-day streak, refills due) and smart alerts |
+| **Medicines** | Name, strength, form, quantity, meal timing, several daily times, chosen weekdays, course start/end dates, stock count, colour tag and notes. Stock goes down automatically when a dose is taken, with days-left estimates and refill alerts |
+| **History** | Calendar heat-map coloured by daily adherence. Click a day to see each dose or correct it |
+| **Analytics** | 30-day adherence trend, adherence by time of day, by weekday and per medicine, a taken/skipped/missed donut and average delay |
+| **AI Insights** | Logistic-regression **missed-dose predictor**: accuracy, precision, recall, F1, ROC-AUC, confusion matrix, feature weights, training-loss curve and personalised recommendations. Each upcoming dose gets a live risk badge |
+| **Interaction checker** | Checks every pair of your medicines against a built-in list of 17 well-documented interactions (generic and Indian brand names) and flags duplicates |
+| **Reminders** | In-app pop-up and sound at dose time, browser notifications (on GitHub Pages), snooze |
+| **Export & backup** | Dose log as CSV, a doctor-ready text report, JSON backup and restore |
+| **Extras** | Dark mode, responsive mobile layout, works offline, no login, data stays in the browser |
 
-## 🛠️ Tech Stack
+## 🤖 Machine-learning model
+**Goal:** predict the probability that a scheduled dose will be missed.
+
+Every past scheduled dose becomes one training row. The features use only information known *before* that day, so there is no data leakage:
+
+| # | Feature | Why it matters |
+|---|---|---|
+| 1 | Hour of day | Adherence changes across the day |
+| 2 | Night dose (after 9 pm) | Night doses are often forgotten |
+| 3 | Weekend | Routines change at weekends |
+| 4 | Before-food dose | Harder timing constraint |
+| 5 | Doses scheduled that day | Pill burden |
+| 6 | Past miss rate of this slot (last 14 days, smoothed) | Personal habit |
+| 7 | Missed a dose yesterday | Misses tend to come in runs |
+
+**Algorithm.** Logistic regression written from scratch in `js/ml.js`:
+- z-score feature standardisation
+- mini-batch gradient descent with L2 regularisation
+- *balanced class weights*, because missed doses are the minority class
+- stratified 80/20 train/test split and evaluation metrics (accuracy, precision, recall, F1, ROC-AUC by the Mann–Whitney method)
+- per-prediction explanations (feature contribution = standardised value × weight)
+
+The model retrains automatically whenever the history changes. It needs at least 30 past doses that include both taken and missed ones.
+
+![AI insights](docs/screenshots/insights.png)
+
+## 🛠️ Tech stack
 | Layer | Technology |
-|-------|------------|
-| Frontend | HTML5, CSS3 |
-| Logic | Vanilla JavaScript (ES6) |
-| Storage | Browser localStorage |
+|---|---|
+| UI | HTML5, CSS3 (custom design system, dark mode, responsive) |
+| Logic | Vanilla JavaScript (ES2020), no frameworks |
+| ML | Custom logistic regression (`js/ml.js`) |
+| Charts | Custom SVG chart library (`js/charts.js`) |
+| Storage | Browser `localStorage` |
+| Tests | Node.js built-in test runner |
 | Hosting | GitHub Pages |
 
-No frameworks or libraries are needed. The whole app is one `index.html` file.
+**No external libraries and no build step.** Open `index.html` and it runs.
 
-## 📂 Project Structure
+## 📂 Project structure
 ```
 mediminder/
-├── index.html   # Complete app (HTML + CSS + JS)
-└── README.md    # Project documentation
+├── index.html              # App shell and all views
+├── css/base.css            # Design system (shared look & feel)
+├── js/
+│   ├── ui.js               # DOM helpers, router, modals, toasts, storage, export
+│   ├── ml.js               # Logistic regression + metrics (from scratch)
+│   ├── charts.js           # SVG line / bar / donut / diverging-bar charts
+│   ├── interactions.js     # Drug-interaction knowledge base
+│   └── app.js              # App logic: schedule, tracking, analytics, ML features
+├── tests/core.test.js      # Unit tests (ML + interactions)
+├── docs/screenshots/       # Images used in this README
+├── package.json
+└── README.md
 ```
 
-## 🚀 How to Run
-**Option 1: Open locally**
-1. Download or clone this repository
-   ```bash
-   git clone https://github.com/<your-username>/mediminder.git
-   ```
-2. Open `index.html` in any web browser.
+## 🚀 Run locally
+```bash
+git clone https://github.com/<your-username>/mediminder.git
+cd mediminder
+# open index.html in your browser, or serve it:
+python -m http.server 8000      # then visit http://localhost:8000
+```
 
-**Option 2: Use the live demo**
-Visit the GitHub Pages link above.
+## ✅ Run the tests
+```bash
+npm test          # or: node --test
+```
 
-## 📖 How to Use
-1. Enter the medicine name, dose and meal timing.
-2. Enter times in 24-hour format, separated by commas (e.g. `08:00, 20:00`).
-3. Click **Add to schedule**.
-4. Click **Taken ✓** when you take each dose. Click **Undo** if you made a mistake.
-5. Check the stats at the top to see your adherence and streak.
-
-## ⚙️ How It Works
-- Each medicine is stored as an object: `{ id, name, dose, meal, times[] }`
-- Taken doses are logged by date: `log["YYYY-MM-DD"]["medId@HH:MM"] = true`
-- **Adherence %** = doses taken ÷ doses scheduled over the last 7 days × 100
-- **Streak** = number of days in a row with every scheduled dose taken
-- A timer checks every 30 seconds and shows a reminder when a dose is due
-
-## 🔮 Future Scope
-- Browser push notifications that work when the tab is closed
-- Cloud sync and login (Firebase)
-- Refill alerts when stock runs low
-- Caregiver mode to track a family member's doses
-- Export adherence report as PDF to share with a doctor
+## 🌐 Deploy to GitHub Pages
+1. Push this folder to a public repository.
+2. Go to **Settings → Pages**, choose **Deploy from a branch**, select `main` and `/ (root)`, then click **Save**.
+3. Your app will be live at `https://<your-username>.github.io/mediminder/`.
 
 ## 📸 Screenshots
+| Analytics | History |
+|---|---|
+| ![Analytics](docs/screenshots/analytics.png) | ![History](docs/screenshots/history.png) |
+| **Interactions** | |
+| ![Interactions](docs/screenshots/interactions.png) | |
 
-<!-- ![MediMinder Screenshot](screenshot.png) -->
+## 🔮 Future scope
+- Cloud sync and caregiver accounts (Firebase / Supabase)
+- Push reminders through a service worker when the tab is closed
+- Prescription OCR to add medicines from a photo
+- Connect to a full drug database (e.g. RxNorm / DrugBank) for interaction checks
+- Gradient-boosted model when more multi-user data is available
 
 ## ⚠️ Disclaimer
-This app is only for reminders and tracking. It does not give medical advice. Always follow your doctor's prescription.
+This is an educational project. It does not replace medical advice. The interaction list covers common examples only. Always follow your doctor's prescription and ask a pharmacist about interactions.
 
 ## 👤 Author
-**<Your Name>**
-B.Tech CSE (AI & ML), Dayananda Sagar University, Bengaluru
-GitHub: [@<your-username>](https://github.com/<your-username>)
+**&lt;Your Name&gt;**, B.Tech CSE (AI & ML), Dayananda Sagar University, Bengaluru
+GitHub: [@&lt;your-username&gt;](https://github.com/<your-username>)
+
+## 📄 License
+MIT. See [LICENSE](LICENSE).

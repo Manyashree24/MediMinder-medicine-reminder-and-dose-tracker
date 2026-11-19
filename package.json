@@ -1,0 +1,10 @@
+{
+  "name": "mediminder-pro",
+  "version": "1.0.0",
+  "description": "Healthcare web app with in-browser machine learning",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
